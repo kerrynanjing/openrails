@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{14E593C0-FACB-49CE-A143-CC11E18AB738}</ProjectGuid>
+    <ProjectGuid>{4F3DFA11-9E18-452A-AAAC-9802CD8A974E}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>ActivitySelect</RootNamespace>
     <AssemblyName>ActivitySelect</AssemblyName>
