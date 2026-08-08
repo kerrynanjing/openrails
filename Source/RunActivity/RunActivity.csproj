@@ -605,6 +605,7 @@
     <Content Include="Viewer3D\WebServices\Web\TrackMonitor\index.js" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\ActivitySelect\ActivitySelect.csproj" />
     <ProjectReference Include="..\Orts.Common\Orts.Common.csproj">
       <Project>{da94d876-7d35-46c3-aece-aface72c686c}</Project>
       <Name>Orts.Common</Name>

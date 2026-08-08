@@ -18,6 +18,7 @@
 // This file is the responsibility of the 3D & Environment Team. 
 
 using System.Threading;
+using Orts.Viewer3D;
 
 namespace Orts.Processes
 {
@@ -30,6 +31,7 @@ namespace Orts.Processes
         readonly ManualResetEvent TerminateEvent = new ManualResetEvent(false);
         readonly WaitHandle[] StartEvents;
         readonly WaitHandle[] FinishEvents;
+
 #if DEBUG_THREAD_PERFORMANCE
         StreamWriter DebugFileStream;
 #endif
