@@ -27,6 +27,7 @@ using Orts.Viewer3D.Debugging;
 using Orts.Viewer3D.Processes;
 using ORTS.Common;
 using ORTS.Settings;
+using ActivitySelect;
 
 namespace Orts
 {
@@ -49,13 +50,14 @@ namespace Orts
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
+        [STAThread]
         [ThreadName("Render")]
         static void Main(string[] args)
         {
             var options = args.Where(a => a.StartsWith("-") || a.StartsWith("/")).Select(a => a.Substring(1));
             var settings = new UserSettings(options);
 
-            //enables loading of dll for specific architecture(32 or 64bit) from distinct folders, useful when both versions require same name (as for OpenAL32.dll)
+            // enables loading of dll for specific architecture(32 or 64bit) from distinct folders...
             string path = Path.Combine(ApplicationInfo.ProcessDirectory, "Native");
             path = Path.Combine(path, (Environment.Is64BitProcess) ? "X64" : "X86");
             NativeMethods.SetDllDirectory(path);
@@ -63,6 +65,15 @@ namespace Orts
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
+            // --- 在此处先显示 Form1，用户关闭窗体后再继续启动游戏 ---
+            // 如果你的窗体类不是 Form1，请改为实际类名。
+            using (var form = new Form1())
+            {
+                // 使用 Application.Run 会运行 WinForms 消息循环，用户关闭窗体后返回继续执行。
+                Application.Run(form);
+            }
+
+            // 继续原有流程：创建并运行 Game
             var game = new Game(settings);
             game.PushState(new GameStateRunActivity(args));
             game.Run();
