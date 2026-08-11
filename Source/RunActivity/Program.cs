@@ -65,12 +65,13 @@ namespace Orts
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            // --- 在此处先显示 Form1，用户关闭窗体后再继续启动游戏 ---
+            // --- 在此处先显示 Form1，用户关闭窗体（按 X）则退出程序 ---
             // 如果你的窗体类不是 Form1，请改为实际类名。
             using (var form = new Form1())
             {
-                // 使用 Application.Run 会运行 WinForms 消息循环，用户关闭窗体后返回继续执行。
-                Application.Run(form);
+                // 使用模态 ShowDialog：按 X 或取消会返回非 OK，从而直接退出 Main。
+                if (form.ShowDialog() != System.Windows.Forms.DialogResult.OK)
+                    return;
             }
 
             // 继续原有流程：创建并运行 Game
