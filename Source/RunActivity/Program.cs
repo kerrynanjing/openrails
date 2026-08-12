@@ -74,9 +74,25 @@ namespace Orts
                     return;
             }
 
+            // 如果 ActivitySelect.Form1 写入了覆盖参数到环境变量，则使用之（使用 '|' 作为分隔符）
+            var overrideEnv = Environment.GetEnvironmentVariable("RUNACT_OVERRIDE_ARGS");
+            string[] finalArgs = args;
+            if (!string.IsNullOrEmpty(overrideEnv))
+            {
+                try
+                {
+                    finalArgs = overrideEnv.Split(new[] { '|' }, StringSplitOptions.None);
+                }
+                catch
+                {
+                    // 解析失败则回退使用原始 args
+                    finalArgs = args;
+                }
+            }
+
             // 继续原有流程：创建并运行 Game
             var game = new Game(settings);
-            game.PushState(new GameStateRunActivity(args));
+            game.PushState(new GameStateRunActivity(finalArgs));
             game.Run();
         }
     }
