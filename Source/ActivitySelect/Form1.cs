@@ -22,6 +22,51 @@ namespace ActivitySelect
             TrySetActivityFromButton("26112任务.act");
         }
 
+        private void button3_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("36369任务.act");
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("46283任务.act");
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("46437任务.act");
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("K34任务.act");
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("K101任务.act");
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("K1556任务.act");
+        }
+
+        private void button9_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("X373任务.act");
+        }
+
+        private void button10_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("X8715.act");
+        }
+
+        private void button11_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("梅钢.act");
+        }
+
         private void TrySetActivityFromButton(string targetActName)
         {
             // 读取命令行参数（跳过 exe 本身）
@@ -32,21 +77,15 @@ namespace ActivitySelect
                 return;
             }
 
-            // 查找包含 "explor" 的开关（-explorer / -exploreactivity / -explore 等）
-            var explorIndex = cmdArgs.FindIndex(a => a.StartsWith("-") && a.ToLowerInvariant().Contains("explor"));
-            if (explorIndex < 0)
+            // 尝试用第一个非开关参数推断 route 路径（例如 PATH 文件路径）
+            var firstNonSwitchIndex = cmdArgs.FindIndex(a => !a.StartsWith("-"));
+            if (firstNonSwitchIndex < 0)
             {
-                MessageBox.Show("未找到包含 'explor' 的参数（例如 -explorer、-exploreactivity 等），无法推断路由目录。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("未找到可用于推断路由目录的路径参数。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            if (explorIndex + 1 >= cmdArgs.Count)
-            {
-                MessageBox.Show("explore 开关后缺少路径参数，无法推断路由目录。", "提示", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                return;
-            }
-
-            var possiblePath = cmdArgs[explorIndex + 1];
+            var possiblePath = cmdArgs[firstNonSwitchIndex];
             string routeDir;
             try
             {
@@ -87,27 +126,41 @@ namespace ActivitySelect
                 return;
             }
 
-            // 构造新的参数列表：移除 explore 段（保守跳过开关 + 最多 5 个参数），插入 -activity "<matched>"
-            var skipAfterExplor = 1 + 5;
-            var newArgs = cmdArgs.Take(explorIndex).ToList();
-            newArgs.Add("-activity");
-            newArgs.Add(matched);
-            if (explorIndex + skipAfterExplor < cmdArgs.Count)
-                newArgs.AddRange(cmdArgs.Skip(explorIndex + skipAfterExplor));
+            // 将原始参数中所有以 '-' 开头的开关（无论名称）都替换为 '-activity' 并使用 matched 作为其参数。
+            var newArgs = new System.Collections.Generic.List<string>();
+            for (int i = 0; i < cmdArgs.Count; i++)
+            {
+                var token = cmdArgs[i];
+                if (token.StartsWith("-"))
+                {
+                    // 无论原来是什么开关，都替换为 -activity <matched>
+                    newArgs.Add("-activity");
+                    newArgs.Add(matched);
 
-            // 写入环境变量以供 RunActivity.Program.Main 使用（调试时可观察）
+                    // 如果原开关后有一个参数（非开关），跳过它以避免重复
+                    if (i + 1 < cmdArgs.Count && !cmdArgs[i + 1].StartsWith("-"))
+                        i++;
+                }
+                else
+                {
+                    // 跳过原始的第一个非开关参数（用于推断 route），其余非开关参数也跳过以避免混淆
+                    //（保持参数集中为 -activity ...）
+                }
+            }
+
+            // 确保至少有一个 -activity 参数
+            if (!newArgs.Any())
+            {
+                newArgs.Add("-activity");
+                newArgs.Add(matched);
+            }
+
             var serialized = string.Join("|", newArgs);
             Environment.SetEnvironmentVariable("RUNACT_OVERRIDE_ARGS", serialized);
 
-            // 显示成功提示，关闭表单以继续后续流程
-            MessageBox.Show($"已为按钮设置并找到活动：{Path.GetFileName(matched)}。\n窗体将关闭，程序将继续启动。", "完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show($"已将所有非 -activity 开关替换为 -activity 并设置活动：{Path.GetFileName(matched)}。\n窗体将关闭，程序将继续启动。", "完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
             DialogResult = DialogResult.OK;
             Close();
-        }
-
-        private void Form1_Load(object sender, EventArgs e)
-        {
-
         }
     }
 }
