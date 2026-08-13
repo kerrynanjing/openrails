@@ -1,0 +1,2 @@
+This branch is I used forked OpenRails source code to create. Its purpose is to improve my multiplayer mode in my own route. Now player must choose the activity from a Form after they start or join the game. It will be more convenient.
+But it just design for my own route. If you want to let it work in your route, you need to modify the 
