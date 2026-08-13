@@ -1,2 +1,56 @@
 This branch is I used forked OpenRails source code to create. Its purpose is to improve my multiplayer mode in my own route. Now player must choose the activity from a Form after they start or join the game. It will be more convenient.
-But it just design for my own route. If you want to let it work in your route, you need to modify the ActivitySelect's Form1, 
+But it just design for my own route. If you want to let it work in your route, you need to modify the ActivitySelect's Form1, change the .act filename to your own file. But you need this file put in your route folder's sub folder "Activities" sub folder.
+private void button1_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("T236任务.act");
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("26112任务.act");
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("36369任务.act");
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("46283任务.act");
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("46437任务.act");
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("K34任务.act");
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("K101任务.act");
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("K1556任务.act");
+        }
+
+        private void button9_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("X373任务.act");
+        }
+
+        private void button10_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("X8715.act");
+        }
+
+        private void button11_Click(object sender, EventArgs e)
+        {
+            TrySetActivityFromButton("梅钢.act");
+        }
