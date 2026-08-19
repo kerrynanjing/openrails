@@ -6,183 +6,134 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Collections.Generic;
 
 namespace ActivitySelect
 {
     public partial class Form1 : Form
     {
-        private readonly string _serverIp = "211.101.245.150";
-        private const int _serverPort = 30001;
-        private TcpClient _serverClient;
+        // 网络广播客户端字段
+        private TcpClient _broadcastClient;
+        private StreamWriter _writer;
+        private StreamReader _reader;
         private CancellationTokenSource _cts;
-        private readonly Dictionary<string, Button> _activityButtons = new Dictionary<string, Button>(StringComparer.OrdinalIgnoreCase);
+
+        private readonly string _serverIp = "211.101.245.150";
+        private readonly int _serverPort = 30001;
+        private readonly string _userName = Environment.UserName;
 
         public Form1()
         {
             InitializeComponent();
 
-            // 将活动名与按钮建立映射（用于收到广播后禁用对应按钮）
-            _activityButtons["T236任务"] = button1;
-            _activityButtons["26112任务"] = button2;
-            _activityButtons["36369任务"] = button3;
-            _activityButtons["46283任务"] = button4;
-            _activityButtons["46437任务"] = button5;
-            _activityButtons["K34任务"] = button6;
-            _activityButtons["K101任务"] = button7;
-            _activityButtons["K1556任务"] = button8;
-            _activityButtons["X373任务"] = button9;
-            _activityButtons["X8715"] = button10;
-            _activityButtons["梅钢"] = button11;
+            // 窗体加载时建立到广播服务器的连接并开始监听
+            Load += async (s, e) => await ConnectToBroadcastServerAsync();
 
-            Shown += Form1_Shown;
-            FormClosing += Form1_FormClosing;
+            // 窗体关闭时断开连接
+            FormClosing += (s, e) => Disconnect();
         }
 
-        private async void Form1_Shown(object sender, EventArgs e)
-        {
-            // 启动与广播服务器的长连接并开始接收消息
-            _cts = new CancellationTokenSource();
-            await ConnectToServerAsync(_cts.Token).ConfigureAwait(false);
-        }
-
-        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
-        {
-            try
-            {
-                _cts?.Cancel();
-                _serverClient?.Close();
-            }
-            catch
-            {
-                // 忽略清理错误
-            }
-        }
-
-        private async Task ConnectToServerAsync(CancellationToken ct)
+        private async Task ConnectToBroadcastServerAsync()
         {
             try
             {
                 // 如果已经连接则不重复连接
-                if (_serverClient != null && _serverClient.Connected)
+                if (_broadcastClient != null && _broadcastClient.Connected)
                     return;
 
-                _serverClient = new TcpClient();
-                await _serverClient.ConnectAsync(_serverIp, _serverPort).ConfigureAwait(false);
+                _cts = new CancellationTokenSource();
+                _broadcastClient = new TcpClient();
+                await _broadcastClient.ConnectAsync(_serverIp, _serverPort).ConfigureAwait(false);
+                var ns = _broadcastClient.GetStream();
+                _reader = new StreamReader(ns, Encoding.UTF8);
+                _writer = new StreamWriter(ns, Encoding.UTF8) { AutoFlush = true };
 
-                // 启动后台读取循环（不阻塞 UI 线程）
-                _ = Task.Run(() => ReadLoopAsync(ct), ct);
+                // 后台读取服务器消息
+                _ = Task.Run(() => ListenLoopAsync(_cts.Token));
             }
-            catch
+            catch (Exception)
             {
-                // 连接失败则忽略（可扩展为重试或显示状态）
+                // 连接失败：可以在这里记录日志或实现重试策略
             }
         }
 
-        private async Task ReadLoopAsync(CancellationToken ct)
+        private async Task ListenLoopAsync(CancellationToken token)
         {
             try
             {
-                var ns = _serverClient.GetStream();
-                try
+                while (!token.IsCancellationRequested)
                 {
-                    var reader = new StreamReader(ns, Encoding.UTF8);
-                    try
-                    {
-                        while (!ct.IsCancellationRequested)
-                        {
-                            // 服务器按行发送消息（协议：ACTIVITY:<活动名> 或 直接 <活动名>）
-                            var line = await reader.ReadLineAsync().ConfigureAwait(false);
-                            if (line == null) break;
-                            ProcessServerMessage(line);
-                        }
-                    }
-                    finally
-                    {
-                        reader.Dispose();
-                    }
-                }
-                finally
-                {
-                    ns.Dispose();
+                    var line = await _reader.ReadLineAsync().ConfigureAwait(false);
+                    if (line == null)
+                        break; // 连接已关闭
+                    HandleServerMessage(line);
                 }
             }
-            catch
+            catch (Exception)
             {
-                // 读取失败或连接中断，结束读取循环
+                // 读取异常：可记录或触发重连
             }
         }
 
-        private void ProcessServerMessage(string raw)
+        private void HandleServerMessage(string msg)
         {
-            if (string.IsNullOrWhiteSpace(raw))
-                return;
-
-            var msg = raw.Trim();
-            if (msg.StartsWith("ACTIVITY:", StringComparison.OrdinalIgnoreCase))
-                msg = msg.Substring("ACTIVITY:".Length).Trim();
-
-            // 如果收到的活动名在映射表中，则在 UI 线程禁用对应按钮
-            if (_activityButtons.TryGetValue(msg, out var btn))
+            // 简单协议：服务器广播 PLAYER_JOINED:用户名
+            if (msg.StartsWith("PLAYER_JOINED:"))
             {
-                if (btn.InvokeRequired)
+                // 在 UI 线程禁用 button1
+                if (InvokeRequired)
                 {
-                    btn.BeginInvoke(new Action(() => btn.Enabled = false));
+                    BeginInvoke(new Action(() => button1.Enabled = false));
                 }
                 else
                 {
-                    btn.Enabled = false;
+                    button1.Enabled = false;
                 }
             }
         }
 
-        private async Task SendActivityToServerAsync(string activity)
+        private async Task SendJoinMessageAsync()
         {
-            if (string.IsNullOrWhiteSpace(activity))
-                return;
-
             try
             {
-                // 确保已连接
-                if (_serverClient == null || !_serverClient.Connected)
-                    await ConnectToServerAsync(CancellationToken.None).ConfigureAwait(false);
-
-                if (_serverClient?.Connected == true)
+                if (_writer == null)
                 {
-                    var ns = _serverClient.GetStream();
-                    try
-                    {
-                        var writer = new StreamWriter(ns, Encoding.UTF8, 4096, leaveOpen: true) { AutoFlush = true };
-                        try
-                        {
-                            // 按行发送，服务器按行解析；前缀 ACTIVITY: 可让服务器更容易识别
-                            await writer.WriteLineAsync("ACTIVITY:" + activity).ConfigureAwait(false);
-                        }
-                        finally
-                        {
-                            writer.Dispose();
-                        }
-                    }
-                    finally
-                    {
-                        ns.Dispose();
-                    }
+                    // 尝试建立连接一次
+                    await ConnectToBroadcastServerAsync().ConfigureAwait(false);
+                    if (_writer == null)
+                        return;
+                }
+
+                var msg = $"JOIN:{_userName}";
+                await _writer.WriteLineAsync(msg).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // 发送失败：忽略或记录，视需要实现重试
+            }
+        }
+
+        private void Disconnect()
+        {
+            try
+            {
+                _cts?.Cancel();
+                _reader?.Dispose();
+                _writer?.Dispose();
+                if (_broadcastClient != null)
+                {
+                    try { _broadcastClient.Close(); } catch { }
+                    _broadcastClient = null;
                 }
             }
-            catch
-            {
-                // 发送失败可忽略或扩展为重试/提示
-            }
+            catch { }
         }
 
         private async void button1_Click(object sender, EventArgs e)
         {
-            var ActivityName = "T236任务";
+            // 先发送 JOIN 消息，告知服务器该玩家已加入
+            await SendJoinMessageAsync().ConfigureAwait(false);
 
-            // 先向广播服务器发送要加入的活动名（让服务器转发给其它已在线客户端）
-            await SendActivityToServerAsync(ActivityName).ConfigureAwait(false);
-
-            // 再执行已有的本地活动设置逻辑（注意：该方法会关闭窗体）
+            // 原有行为：设置并启动活动
             TrySetActivityFromButton("T236任务.act");
         }
 
