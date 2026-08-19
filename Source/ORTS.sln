@@ -61,6 +61,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimetableEditor", "Contrib\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActivitySelect", "ActivitySelect\ActivitySelect.csproj", "{4F3DFA11-9E18-452A-AAAC-9802CD8A974E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ActivityBroadcastServer", "ActivityBroadcastServer\ActivityBroadcastServer.csproj", "{A5A79BED-E04C-4BB3-8749-4288CBCFA8D7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -183,6 +185,10 @@ Global
 		{4F3DFA11-9E18-452A-AAAC-9802CD8A974E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F3DFA11-9E18-452A-AAAC-9802CD8A974E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F3DFA11-9E18-452A-AAAC-9802CD8A974E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A5A79BED-E04C-4BB3-8749-4288CBCFA8D7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A5A79BED-E04C-4BB3-8749-4288CBCFA8D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A5A79BED-E04C-4BB3-8749-4288CBCFA8D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A5A79BED-E04C-4BB3-8749-4288CBCFA8D7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
