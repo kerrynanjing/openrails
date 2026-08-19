@@ -1,19 +1,188 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Collections.Generic;
 
 namespace ActivitySelect
 {
     public partial class Form1 : Form
     {
+        private readonly string _serverIp = "211.101.245.150";
+        private const int _serverPort = 30001;
+        private TcpClient _serverClient;
+        private CancellationTokenSource _cts;
+        private readonly Dictionary<string, Button> _activityButtons = new Dictionary<string, Button>(StringComparer.OrdinalIgnoreCase);
+
         public Form1()
         {
             InitializeComponent();
+
+            // 将活动名与按钮建立映射（用于收到广播后禁用对应按钮）
+            _activityButtons["T236任务"] = button1;
+            _activityButtons["26112任务"] = button2;
+            _activityButtons["36369任务"] = button3;
+            _activityButtons["46283任务"] = button4;
+            _activityButtons["46437任务"] = button5;
+            _activityButtons["K34任务"] = button6;
+            _activityButtons["K101任务"] = button7;
+            _activityButtons["K1556任务"] = button8;
+            _activityButtons["X373任务"] = button9;
+            _activityButtons["X8715"] = button10;
+            _activityButtons["梅钢"] = button11;
+
+            Shown += Form1_Shown;
+            FormClosing += Form1_FormClosing;
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private async void Form1_Shown(object sender, EventArgs e)
         {
+            // 启动与广播服务器的长连接并开始接收消息
+            _cts = new CancellationTokenSource();
+            await ConnectToServerAsync(_cts.Token).ConfigureAwait(false);
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                _cts?.Cancel();
+                _serverClient?.Close();
+            }
+            catch
+            {
+                // 忽略清理错误
+            }
+        }
+
+        private async Task ConnectToServerAsync(CancellationToken ct)
+        {
+            try
+            {
+                // 如果已经连接则不重复连接
+                if (_serverClient != null && _serverClient.Connected)
+                    return;
+
+                _serverClient = new TcpClient();
+                await _serverClient.ConnectAsync(_serverIp, _serverPort).ConfigureAwait(false);
+
+                // 启动后台读取循环（不阻塞 UI 线程）
+                _ = Task.Run(() => ReadLoopAsync(ct), ct);
+            }
+            catch
+            {
+                // 连接失败则忽略（可扩展为重试或显示状态）
+            }
+        }
+
+        private async Task ReadLoopAsync(CancellationToken ct)
+        {
+            try
+            {
+                var ns = _serverClient.GetStream();
+                try
+                {
+                    var reader = new StreamReader(ns, Encoding.UTF8);
+                    try
+                    {
+                        while (!ct.IsCancellationRequested)
+                        {
+                            // 服务器按行发送消息（协议：ACTIVITY:<活动名> 或 直接 <活动名>）
+                            var line = await reader.ReadLineAsync().ConfigureAwait(false);
+                            if (line == null) break;
+                            ProcessServerMessage(line);
+                        }
+                    }
+                    finally
+                    {
+                        reader.Dispose();
+                    }
+                }
+                finally
+                {
+                    ns.Dispose();
+                }
+            }
+            catch
+            {
+                // 读取失败或连接中断，结束读取循环
+            }
+        }
+
+        private void ProcessServerMessage(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                return;
+
+            var msg = raw.Trim();
+            if (msg.StartsWith("ACTIVITY:", StringComparison.OrdinalIgnoreCase))
+                msg = msg.Substring("ACTIVITY:".Length).Trim();
+
+            // 如果收到的活动名在映射表中，则在 UI 线程禁用对应按钮
+            if (_activityButtons.TryGetValue(msg, out var btn))
+            {
+                if (btn.InvokeRequired)
+                {
+                    btn.BeginInvoke(new Action(() => btn.Enabled = false));
+                }
+                else
+                {
+                    btn.Enabled = false;
+                }
+            }
+        }
+
+        private async Task SendActivityToServerAsync(string activity)
+        {
+            if (string.IsNullOrWhiteSpace(activity))
+                return;
+
+            try
+            {
+                // 确保已连接
+                if (_serverClient == null || !_serverClient.Connected)
+                    await ConnectToServerAsync(CancellationToken.None).ConfigureAwait(false);
+
+                if (_serverClient?.Connected == true)
+                {
+                    var ns = _serverClient.GetStream();
+                    try
+                    {
+                        var writer = new StreamWriter(ns, Encoding.UTF8, 4096, leaveOpen: true) { AutoFlush = true };
+                        try
+                        {
+                            // 按行发送，服务器按行解析；前缀 ACTIVITY: 可让服务器更容易识别
+                            await writer.WriteLineAsync("ACTIVITY:" + activity).ConfigureAwait(false);
+                        }
+                        finally
+                        {
+                            writer.Dispose();
+                        }
+                    }
+                    finally
+                    {
+                        ns.Dispose();
+                    }
+                }
+            }
+            catch
+            {
+                // 发送失败可忽略或扩展为重试/提示
+            }
+        }
+
+        private async void button1_Click(object sender, EventArgs e)
+        {
+            var ActivityName = "T236任务";
+
+            // 先向广播服务器发送要加入的活动名（让服务器转发给其它已在线客户端）
+            await SendActivityToServerAsync(ActivityName).ConfigureAwait(false);
+
+            // 再执行已有的本地活动设置逻辑（注意：该方法会关闭窗体）
             TrySetActivityFromButton("T236任务.act");
         }
 
