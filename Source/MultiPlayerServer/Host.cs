@@ -10,6 +10,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
+
 
 namespace MultiPlayerServer
 {
@@ -177,6 +179,37 @@ namespace MultiPlayerServer
                 ReadResult result = await reader.ReadAsync().ConfigureAwait(false);
 
                 ReadOnlySequence<byte> buffer = result.Buffer;
+
+                // ==== 调试：把原始字节与 Unicode 解码写入文件（免去控制台重定向问题） ====
+                try
+                {
+                    var logPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "ActivityBroadcast_debug.log");
+                    File.AppendAllText(logPath, $"[{DateTime.UtcNow:O}] From {playerName} Length={buffer.Length}{Environment.NewLine}");
+
+                    foreach (ReadOnlyMemory<byte> seg in buffer)
+                    {
+                        for (int i = 0; i < seg.Span.Length; i++)
+                        {
+                            File.AppendAllText(logPath, $"{seg.Span[i]:X2} ");
+                        }
+                    }
+                    File.AppendAllText(logPath, Environment.NewLine);
+
+                    try
+                    {
+                        // 使用类中定义的 encoding（Encoding.Unicode）通过扩展方法解码
+                        File.AppendAllText(logPath, buffer.GetString(encoding) + Environment.NewLine + "----" + Environment.NewLine);
+                    }
+                    catch (Exception exDec)
+                    {
+                        File.AppendAllText(logPath, $"DecodeError: {exDec.Message}{Environment.NewLine}----{Environment.NewLine}");
+                    }
+                }
+                catch
+                {
+                    // 忽略任何日志写入错误，确保不影响主逻辑
+                }
+                // ==== 调试结束 ====
 
                 if (!playerNameSet)
                 {
