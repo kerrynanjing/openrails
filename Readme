@@ -54,3 +54,5 @@ private void button1_Click(object sender, EventArgs e)
         {
             TrySetActivityFromButton("梅钢.act");
         }
+
+The branch ActivitySelect1 add server code in it. But it just can be used in my standalone server, and it's not very stable. Maybe I shall improve it in future. If anybody is interested in it, you can try to modify it for your purpose. Welcome to contact me for some useful suggestions. My E-mail: metrix2006@sina.com
