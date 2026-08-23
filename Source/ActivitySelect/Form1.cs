@@ -121,6 +121,28 @@ namespace ActivitySelect
 
                         using (var ns = client.GetStream())
                         {
+                            // 立即在当前接收连接上注册并请求当前 ACTSET，
+                            // 确保本连接能立刻接收到服务器回送的 ACTSET，从而正确更新 UI。
+                            try
+                            {
+                                string user = GetOrPromptUsername();
+                                string playerPayload = "PLAYER " + user;
+                                string framedPlayer = " " + playerPayload.Length + ": " + playerPayload;
+                                var bytesPlayer = encoding.GetBytes(framedPlayer);
+                                await ns.WriteAsync(bytesPlayer, 0, bytesPlayer.Length).ConfigureAwait(false);
+                                await ns.FlushAsync().ConfigureAwait(false);
+
+                                // 请求当前活动（服务器会回送 ACTSET）
+                                string framedGetAct = " " + "GETACT".Length + ": " + "GETACT";
+                                var bytesGetAct = encoding.GetBytes(framedGetAct);
+                                await ns.WriteAsync(bytesGetAct, 0, bytesGetAct.Length).ConfigureAwait(false);
+                                await ns.FlushAsync().ConfigureAwait(false);
+                            }
+                            catch
+                            {
+                                // 忽略注册/请求中的临时错误，仍继续接收循环
+                            }
+
                             var buffer = new byte[4096];
                             while (!token.IsCancellationRequested)
                             {
@@ -392,7 +414,7 @@ namespace ActivitySelect
                 }
             }
 
-            //TrySetActivityFromButton("T236任务.act");
+            TrySetActivityFromButton("T236任务.act");
         }
 
         private void ProcessReceivedActivity(string received)
