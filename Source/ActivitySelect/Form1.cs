@@ -11,8 +11,18 @@ using System.Windows.Forms;
 namespace ActivitySelect
 {
     public partial class Form1 : Form
-    {
+    {        
         private string ActivityName;
+        private string ActivityName1;
+        private string ActivityName2;
+        private string ActivityName3;
+        private string ActivityName4;
+        private string ActivityName5;
+        private string ActivityName6;
+        private string ActivityName7;
+        private string ActivityName8;
+        private string ActivityName9;
+        private string ActivityName10;
         private CancellationTokenSource _cts;
 
         // 持久化到多人服务器的连接（用于注册/发送多人消息）
@@ -422,40 +432,172 @@ namespace ActivitySelect
             string logPath = Path.Combine(Path.GetTempPath(), "ActivitySelect_receive.log");
             try
             {
-                // 1) 清理 BOM 与不可见控制字符
                 if (received == null) received = "";
                 received = received.Trim().Replace("\uFEFF", "").Replace("\uFFFE", "");
 
-                // 2) 记录原始接收字符串
                 File.AppendAllText(logPath, $"[{DateTime.Now:O}] Received raw: \"{received}\"{Environment.NewLine}");
 
-                // 3) 提取首个 ASCII token（如 T236）
                 var m = System.Text.RegularExpressions.Regex.Match(received, @"([A-Za-z0-9]+)");
                 string asciiToken = m.Success ? m.Groups[1].Value : null;
 
-                // 4) 规范化比较：ASCII 或完整中文
+                // 已有：T236 检测
                 bool matchAscii = !string.IsNullOrEmpty(asciiToken) && string.Equals(asciiToken, "T236", StringComparison.OrdinalIgnoreCase);
                 bool containsAscii = !string.IsNullOrEmpty(received) && received.IndexOf("T236", StringComparison.OrdinalIgnoreCase) >= 0;
                 bool equalChinese = string.Equals(received, "T236任务", StringComparison.Ordinal);
                 bool containsChinese = received.IndexOf("T236任务", StringComparison.Ordinal) >= 0;
 
-                File.AppendAllText(logPath, $"[{DateTime.Now:O}] asciiToken=\"{asciiToken}\", matchAscii={matchAscii}, containsAscii={containsAscii}, equalChinese={equalChinese}, containsChinese={containsChinese}{Environment.NewLine}");
+                // 已有：26112 检测
+                bool matchAscii26112 = !string.IsNullOrEmpty(asciiToken) && string.Equals(asciiToken, "26112", StringComparison.OrdinalIgnoreCase);
+                bool containsAscii26112 = !string.IsNullOrEmpty(received) && received.IndexOf("26112", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool equalChinese26112 = string.Equals(received, "26112任务", StringComparison.Ordinal);
+                bool containsChinese26112 = received.IndexOf("26112任务", StringComparison.Ordinal) >= 0;
 
-                // 5) 如果仍然未匹配，记录原始字节（方便比对 hex）
-                if (!(matchAscii || containsAscii || equalChinese || containsChinese))
-                {
-                    // dump codepoints for diagnosis
-                    var sb = new StringBuilder();
-                    foreach (var c in received) sb.AppendFormat("U+{0:X4} ", (int)c);
-                    File.AppendAllText(logPath, $"[{DateTime.Now:O}] Codepoints: {sb}{Environment.NewLine}");
-                }
+                // 新增：36369 检测
+                bool matchAscii36369 = !string.IsNullOrEmpty(asciiToken) && string.Equals(asciiToken, "36369", StringComparison.OrdinalIgnoreCase);
+                bool containsAscii36369 = !string.IsNullOrEmpty(received) && received.IndexOf("36369", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool equalChinese36369 = string.Equals(received, "36369任务", StringComparison.Ordinal);
+                bool containsChinese36369 = received.IndexOf("36369任务", StringComparison.Ordinal) >= 0;
 
-                // 6) 最终判断
+                // 已有：MEIGANG / 梅钢 检测
+                bool matchAsciiMeigang = !string.IsNullOrEmpty(asciiToken) && string.Equals(asciiToken, "MEIGANG", StringComparison.OrdinalIgnoreCase);
+                bool containsAsciiMeigang = !string.IsNullOrEmpty(received) && received.IndexOf("MEIGANG", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool equalChineseMeigang = string.Equals(received, "梅钢", StringComparison.Ordinal);
+                bool containsChineseMeigang = received.IndexOf("梅钢", StringComparison.Ordinal) >= 0;
+
+                // 新增：46283 / 46437 / K34 / K101 / K1556 / X373 / X8715 检测
+                bool match46283 = !string.IsNullOrEmpty(asciiToken) && string.Equals(asciiToken, "46283", StringComparison.OrdinalIgnoreCase);
+                bool contains46283 = !string.IsNullOrEmpty(received) && received.IndexOf("46283", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool equal46283 = string.Equals(received, "46283任务", StringComparison.Ordinal);
+                bool containsChinese46283 = received.IndexOf("46283任务", StringComparison.Ordinal) >= 0;
+
+                bool match46437 = !string.IsNullOrEmpty(asciiToken) && string.Equals(asciiToken, "46437", StringComparison.OrdinalIgnoreCase);
+                bool contains46437 = !string.IsNullOrEmpty(received) && received.IndexOf("46437", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool equal46437 = string.Equals(received, "46437任务", StringComparison.Ordinal);
+                bool containsChinese46437 = received.IndexOf("46437任务", StringComparison.Ordinal) >= 0;
+
+                bool matchK34 = !string.IsNullOrEmpty(asciiToken) && string.Equals(asciiToken, "K34", StringComparison.OrdinalIgnoreCase);
+                bool containsK34 = !string.IsNullOrEmpty(received) && received.IndexOf("K34", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool equalK34 = string.Equals(received, "K34任务", StringComparison.Ordinal);
+                bool containsChineseK34 = received.IndexOf("K34任务", StringComparison.Ordinal) >= 0;
+
+                bool matchK101 = !string.IsNullOrEmpty(asciiToken) && string.Equals(asciiToken, "K101", StringComparison.OrdinalIgnoreCase);
+                bool containsK101 = !string.IsNullOrEmpty(received) && received.IndexOf("K101", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool equalK101 = string.Equals(received, "K101任务", StringComparison.Ordinal);
+                bool containsChineseK101 = received.IndexOf("K101任务", StringComparison.Ordinal) >= 0;
+
+                bool matchK1556 = !string.IsNullOrEmpty(asciiToken) && string.Equals(asciiToken, "K1556", StringComparison.OrdinalIgnoreCase);
+                bool containsK1556 = !string.IsNullOrEmpty(received) && received.IndexOf("K1556", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool equalK1556 = string.Equals(received, "K1556任务", StringComparison.Ordinal);
+                bool containsChineseK1556 = received.IndexOf("K1556任务", StringComparison.Ordinal) >= 0;
+
+                bool matchX373 = !string.IsNullOrEmpty(asciiToken) && string.Equals(asciiToken, "X373", StringComparison.OrdinalIgnoreCase);
+                bool containsX373 = !string.IsNullOrEmpty(received) && received.IndexOf("X373", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool equalX373 = string.Equals(received, "X373任务", StringComparison.Ordinal);
+                bool containsChineseX373 = received.IndexOf("X373任务", StringComparison.Ordinal) >= 0;
+
+                bool matchX8715 = !string.IsNullOrEmpty(asciiToken) && string.Equals(asciiToken, "X8715", StringComparison.OrdinalIgnoreCase);
+                bool containsX8715 = !string.IsNullOrEmpty(received) && received.IndexOf("X8715", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool equalX8715Act = string.Equals(received, "X8715.act", StringComparison.Ordinal);
+                bool containsChineseX8715 = received.IndexOf("X8715", StringComparison.Ordinal) >= 0;
+
+                File.AppendAllText(logPath, $"[{DateTime.Now:O}] asciiToken=\"{asciiToken}\", T236={matchAscii||containsAscii||equalChinese||containsChinese}, 26112={matchAscii26112||containsAscii26112||equalChinese26112||containsChinese26112}, 36369={matchAscii36369||containsAscii36369||equalChinese36369||containsChinese36369}, MEIGANG={matchAsciiMeigang||containsAsciiMeigang||equalChineseMeigang||containsChineseMeigang}, 46283={match46283||contains46283||equal46283||containsChinese46283}, 46437={match46437||contains46437||equal46437||containsChinese46437}, K34={matchK34||containsK34||equalK34||containsChineseK34}, K101={matchK101||containsK101||equalK101||containsChineseK101}, K1556={matchK1556||containsK1556||equalK1556||containsChineseK1556}, X373={matchX373||containsX373||equalX373||containsChineseX373}, X8715={matchX8715||containsX8715||equalX8715Act||containsChineseX8715}{Environment.NewLine}");
+
+                // T236 -> 禁用 button1
                 if (matchAscii || containsAscii || equalChinese || containsChinese)
                 {
                     if (button1.InvokeRequired) button1.Invoke(new Action(() => button1.Enabled = false));
                     else button1.Enabled = false;
                     File.AppendAllText(logPath, $"[{DateTime.Now:O}] button1 disabled{Environment.NewLine}");
+                }
+
+                // 26112 -> 禁用 button2
+                if (matchAscii26112 || containsAscii26112 || equalChinese26112 || containsChinese26112)
+                {
+                    ActivityName1 = "26112";
+                    if (button2.InvokeRequired) button2.Invoke(new Action(() => button2.Enabled = false));
+                    else button2.Enabled = false;
+                    File.AppendAllText(logPath, $"[{DateTime.Now:O}] button2 disabled (matched 26112){Environment.NewLine}");
+                }
+
+                // 36369 -> 禁用 button3
+                if (matchAscii36369 || containsAscii36369 || equalChinese36369 || containsChinese36369)
+                {
+                    ActivityName2 = "36369";
+                    if (button3.InvokeRequired) button3.Invoke(new Action(() => button3.Enabled = false));
+                    else button3.Enabled = false;
+                    File.AppendAllText(logPath, $"[{DateTime.Now:O}] button3 disabled (matched 36369){Environment.NewLine}");
+                }
+
+                // MEIGANG -> 禁用 button11
+                if (matchAsciiMeigang || containsAsciiMeigang || equalChineseMeigang || containsChineseMeigang)
+                {
+                    ActivityName10 = "MEIGANG";
+                    if (button11.InvokeRequired) button11.Invoke(new Action(() => button11.Enabled = false));
+                    else button11.Enabled = false;
+                    File.AppendAllText(logPath, $"[{DateTime.Now:O}] button11 disabled (matched MEIGANG){Environment.NewLine}");
+                }
+
+                // 46283 -> 禁用 button4
+                if (match46283 || contains46283 || equal46283 || containsChinese46283)
+                {
+                    ActivityName3 = "46283";
+                    if (button4.InvokeRequired) button4.Invoke(new Action(() => button4.Enabled = false));
+                    else button4.Enabled = false;
+                    File.AppendAllText(logPath, $"[{DateTime.Now:O}] button4 disabled (matched 46283){Environment.NewLine}");
+                }
+
+                // 46437 -> 禁用 button5
+                if (match46437 || contains46437 || equal46437 || containsChinese46437)
+                {
+                    ActivityName4 = "46437";
+                    if (button5.InvokeRequired) button5.Invoke(new Action(() => button5.Enabled = false));
+                    else button5.Enabled = false;
+                    File.AppendAllText(logPath, $"[{DateTime.Now:O}] button5 disabled (matched 46437){Environment.NewLine}");
+                }
+
+                // K34 -> 禁用 button6
+                if (matchK34 || containsK34 || equalK34 || containsChineseK34)
+                {
+                    ActivityName5 = "K34";
+                    if (button6.InvokeRequired) button6.Invoke(new Action(() => button6.Enabled = false));
+                    else button6.Enabled = false;
+                    File.AppendAllText(logPath, $"[{DateTime.Now:O}] button6 disabled (matched K34){Environment.NewLine}");
+                }
+
+                // K101 -> 禁用 button7
+                if (matchK101 || containsK101 || equalK101 || containsChineseK101)
+                {
+                    ActivityName6 = "K101";
+                    if (button7.InvokeRequired) button7.Invoke(new Action(() => button7.Enabled = false));
+                    else button7.Enabled = false;
+                    File.AppendAllText(logPath, $"[{DateTime.Now:O}] button7 disabled (matched K101){Environment.NewLine}");
+                }
+
+                // K1556 -> 禁用 button8
+                if (matchK1556 || containsK1556 || equalK1556 || containsChineseK1556)
+                {
+                    ActivityName7 = "K1556";
+                    if (button8.InvokeRequired) button8.Invoke(new Action(() => button8.Enabled = false));
+                    else button8.Enabled = false;
+                    File.AppendAllText(logPath, $"[{DateTime.Now:O}] button8 disabled (matched K1556){Environment.NewLine}");
+                }
+
+                // X373 -> 禁用 button9
+                if (matchX373 || containsX373 || equalX373 || containsChineseX373)
+                {
+                    ActivityName8 = "X373";
+                    if (button9.InvokeRequired) button9.Invoke(new Action(() => button9.Enabled = false));
+                    else button9.Enabled = false;
+                    File.AppendAllText(logPath, $"[{DateTime.Now:O}] button9 disabled (matched X373){Environment.NewLine}");
+                }
+
+                // X8715 -> 禁用 button10
+                if (matchX8715 || containsX8715 || equalX8715Act || containsChineseX8715)
+                {
+                    ActivityName9 = "X8715";
+                    if (button10.InvokeRequired) button10.Invoke(new Action(() => button10.Enabled = false));
+                    else button10.Enabled = false;
+                    File.AppendAllText(logPath, $"[{DateTime.Now:O}] button10 disabled (matched X8715){Environment.NewLine}");
                 }
             }
             catch (Exception ex)
@@ -465,16 +607,261 @@ namespace ActivitySelect
         }
 
         // 其余按钮与 TrySetActivityFromButton 保持不变（省略）
-        private void button2_Click(object sender, EventArgs e) { TrySetActivityFromButton("26112任务.act"); }
-        private void button3_Click(object sender, EventArgs e) { TrySetActivityFromButton("36369任务.act"); }
-        private void button4_Click(object sender, EventArgs e) { TrySetActivityFromButton("46283任务.act"); }
-        private void button5_Click(object sender, EventArgs e) { TrySetActivityFromButton("46437任务.act"); }
-        private void button6_Click(object sender, EventArgs e) { TrySetActivityFromButton("K34任务.act"); }
-        private void button7_Click(object sender, EventArgs e) { TrySetActivityFromButton("K101任务.act"); }
-        private void button8_Click(object sender, EventArgs e) { TrySetActivityFromButton("K1556任务.act"); }
-        private void button9_Click(object sender, EventArgs e) { TrySetActivityFromButton("X373任务.act"); }
-        private void button10_Click(object sender, EventArgs e) { TrySetActivityFromButton("X8715.act"); }
-        private void button11_Click(object sender, EventArgs e) { TrySetActivityFromButton("梅钢.act"); }
+        // 将 button2_Click 改为与 button1 相同的发送逻辑并设置 ActivityName1、线程安全禁用 button2
+        private async void button2_Click(object sender, EventArgs e)
+        {
+            ActivityName1 = "26112";
+
+            try
+            {
+                await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
+
+                // 获取或生成唯一用户名
+                string user = GetOrPromptUsername();
+
+                // 使用 ASCII 活动名 26112
+                string messagePayload = "MESSAGE All\tInfo\tactivity: 26112";
+
+                // 一次性写入 PLAYER + MESSAGE，并保持连接
+                await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (this.InvokeRequired)
+                    this.Invoke(new Action(() => MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error)));
+                else
+                    MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            // 保留本地切换活动逻辑（不禁用按钮）
+            TrySetActivityFromButton("26112任务.act");
+        }
+        // 修改 button3_Click：设置 ActivityName2，并按 button1 的方式线程安全禁用 button3
+        private async void button3_Click(object sender, EventArgs e)
+        {
+            ActivityName2 = "36369";
+
+            try
+            {
+                await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
+
+                // 获取或生成唯一用户名
+                string user = GetOrPromptUsername();
+
+                // 使用 ASCII 活动名 36369
+                string messagePayload = "MESSAGE All\tInfo\tactivity: 36369";
+
+                // 一次性写入 PLAYER + MESSAGE，并保持连接
+                await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (this.InvokeRequired)
+                    this.Invoke(new Action(() => MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error)));
+                else
+                    MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            // 保留本地切换活动逻辑（不禁用按钮）
+            TrySetActivityFromButton("36369任务.act");
+        }
+        private async void button4_Click(object sender, EventArgs e)
+        {
+            ActivityName3 = "46283";
+
+            try
+            {
+                await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
+
+                string user = GetOrPromptUsername();
+                string messagePayload = "MESSAGE All\tInfo\tactivity: 46283";
+
+                await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (this.InvokeRequired)
+                    this.Invoke(new Action(() => MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error)));
+                else
+                    MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            TrySetActivityFromButton("46283任务.act");
+        }
+
+        private async void button5_Click(object sender, EventArgs e)
+        {
+            ActivityName4 = "46437";
+
+            try
+            {
+                await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
+
+                string user = GetOrPromptUsername();
+                string messagePayload = "MESSAGE All\tInfo\tactivity: 46437";
+
+                await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (this.InvokeRequired)
+                    this.Invoke(new Action(() => MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error)));
+                else
+                    MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            TrySetActivityFromButton("46437任务.act");
+        }
+
+        private async void button6_Click(object sender, EventArgs e)
+        {
+            ActivityName5 = "K34";
+
+            try
+            {
+                await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
+
+                string user = GetOrPromptUsername();
+                string messagePayload = "MESSAGE All\tInfo\tactivity: K34";
+
+                await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (this.InvokeRequired)
+                    this.Invoke(new Action(() => MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error)));
+                else
+                    MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            TrySetActivityFromButton("K34任务.act");
+        }
+
+        private async void button7_Click(object sender, EventArgs e)
+        {
+            ActivityName6 = "K101";
+
+            try
+            {
+                await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
+
+                string user = GetOrPromptUsername();
+                string messagePayload = "MESSAGE All\tInfo\tactivity: K101";
+
+                await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (this.InvokeRequired)
+                    this.Invoke(new Action(() => MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error)));
+                else
+                    MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            TrySetActivityFromButton("K101任务.act");
+        }
+
+        private async void button8_Click(object sender, EventArgs e)
+        {
+            ActivityName7 = "K1556";
+
+            try
+            {
+                await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
+
+                string user = GetOrPromptUsername();
+                string messagePayload = "MESSAGE All\tInfo\tactivity: K1556";
+
+                await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (this.InvokeRequired)
+                    this.Invoke(new Action(() => MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error)));
+                else
+                    MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            TrySetActivityFromButton("K1556任务.act");
+        }
+
+        private async void button9_Click(object sender, EventArgs e)
+        {
+            ActivityName8 = "X373";
+
+            try
+            {
+                await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
+
+                string user = GetOrPromptUsername();
+                string messagePayload = "MESSAGE All\tInfo\tactivity: X373";
+
+                await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (this.InvokeRequired)
+                    this.Invoke(new Action(() => MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error)));
+                else
+                    MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            TrySetActivityFromButton("X373任务.act");
+        }
+
+        private async void button10_Click(object sender, EventArgs e)
+        {
+            ActivityName9 = "X8715";
+
+            try
+            {
+                await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
+
+                string user = GetOrPromptUsername();
+                string messagePayload = "MESSAGE All\tInfo\tactivity: X8715";
+
+                await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (this.InvokeRequired)
+                    this.Invoke(new Action(() => MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error)));
+                else
+                    MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            TrySetActivityFromButton("X8715.act");
+        }
+        // 将 button11_Click 修改为向多人服务器广播但不在本地禁用按钮
+        private async void button11_Click(object sender, EventArgs e)
+        {
+            // 设置变量
+            ActivityName10 = "MEIGANG";
+
+            try
+            {
+                await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
+
+                // 获取或生成唯一用户名
+                string user = GetOrPromptUsername();
+
+                // 使用 ASCII 活动名 MEIGANG 并构造 MESSAGE
+                string messagePayload = "MESSAGE All\tInfo\tactivity: MEIGANG";
+
+                // 一次性写入 PLAYER + MESSAGE，并保持连接
+                await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (this.InvokeRequired)
+                    this.Invoke(new Action(() => MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error)));
+                else
+                    MessageBox.Show($"发送多人消息失败：{ex.Message}", "错误", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+
+            // 保留原有本地切换活动逻辑，但不禁用 button11
+            TrySetActivityFromButton("梅钢.act");
+        }
 
         private void TrySetActivityFromButton(string targetActName)
         {
