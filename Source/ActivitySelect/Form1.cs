@@ -316,17 +316,16 @@ namespace ActivitySelect
             await EnsureMpConnectedAndRegisteredAsync(host, port).ConfigureAwait(false);
         }
 
-        private async Task SendPlayerAndMessageInOneWriteAsync(string _ignoredUserName, string messagePayload)
+        private async Task SendPlayerAndMessageInOneWriteAsync(string userName, string messagePayload)
         {
             if (_mpClient == null || !_mpClient.Connected || _mpStream == null)
                 throw new InvalidOperationException("MP client not connected");
 
-            // 固定为测试时使用的 player（与工具一致）
-            string playerPayload = "PLAYER Administrator_3480 Code 0 0 0 0 0 0 0 0\rLead\rCON\rROUTE\rPATH\r0\r";
+            // 使用传入的用户名而不是硬编码
+            string playerPayload = "PLAYER " + userName + " Code 0 0 0 0 0 0 0 0\rLead\rCON\rROUTE\rPATH\r0\r";
             string framedPlayer = " " + playerPayload.Length + ": " + playerPayload;
             string framedMessage = " " + messagePayload.Length + ": " + messagePayload;
 
-            // 直接用 Unicode 编码（UTF-16LE），这与工具完全一致
             var enc = Encoding.Unicode;
             byte[] bytesPlayer = enc.GetBytes(framedPlayer);
             byte[] bytesMessage = enc.GetBytes(framedMessage);
@@ -376,7 +375,7 @@ namespace ActivitySelect
                 try { File.AppendAllText(logPath, $"[{DateTime.Now:O}] ReadResponse error: {ex.Message}{Environment.NewLine}"); } catch { }
             }
 
-            // 3) 发送 MESSAGE（activity）
+            // 3) 发送 MESSAGE（这里 messagePayload 可能为 "SETACT <idx> <val>" 或 "SETACT <val>"）
             try { File.AppendAllText(logPath, $"[{DateTime.Now:O}] (EmbedBytes) Sending MESSAGE {bytesMessage.Length} bytes{Environment.NewLine}"); } catch { }
             await _mpStream.WriteAsync(bytesMessage, 0, bytesMessage.Length).ConfigureAwait(false);
             await _mpStream.FlushAsync().ConfigureAwait(false);
@@ -389,7 +388,7 @@ namespace ActivitySelect
             try { File.AppendAllText(logPath, $"[{DateTime.Now:O}] SendPlayerAndMessage completed.{Environment.NewLine}"); } catch { }
         }
 
-        // button1: 建立持久连接并一次性发送 PLAYER + MESSAGE(activity)
+        // button1: 建立持久连接并一次性发送 PLAYER + SETACT(slot 1)
         private async void button1_Click(object sender, EventArgs e)
         {
             // 改为 ASCII 标识
@@ -402,10 +401,10 @@ namespace ActivitySelect
                 // 获取或生成唯一用户名
                 string user = GetOrPromptUsername();
 
-                // 使用 ASCII 活动名 T236
-                string messagePayload = "MESSAGE All\tInfo\tactivity: T236";
+                // 直接发送 SETACT <slot> <value>
+                string messagePayload = "SETACT 1 T236";
 
-                // 一次性写入 PLAYER + MESSAGE，并保持连接
+                // 一次性写入 PLAYER + MESSAGE（此处 MESSAGE 为 SETACT），并保持连接
                 await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
 
                 // 本地立即禁用（确保 UI 反馈）
@@ -619,8 +618,8 @@ namespace ActivitySelect
                 // 获取或生成唯一用户名
                 string user = GetOrPromptUsername();
 
-                // 使用 ASCII 活动名 26112
-                string messagePayload = "MESSAGE All\tInfo\tactivity: 26112";
+                // 使用 SETACT 2 26112
+                string messagePayload = "SETACT 2 26112";
 
                 // 一次性写入 PLAYER + MESSAGE，并保持连接
                 await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
@@ -648,8 +647,8 @@ namespace ActivitySelect
                 // 获取或生成唯一用户名
                 string user = GetOrPromptUsername();
 
-                // 使用 ASCII 活动名 36369
-                string messagePayload = "MESSAGE All\tInfo\tactivity: 36369";
+                // 使用 SETACT 3 36369
+                string messagePayload = "SETACT 3 36369";
 
                 // 一次性写入 PLAYER + MESSAGE，并保持连接
                 await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
@@ -674,7 +673,7 @@ namespace ActivitySelect
                 await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
 
                 string user = GetOrPromptUsername();
-                string messagePayload = "MESSAGE All\tInfo\tactivity: 46283";
+                string messagePayload = "SETACT 4 46283";
 
                 await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
             }
@@ -698,7 +697,7 @@ namespace ActivitySelect
                 await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
 
                 string user = GetOrPromptUsername();
-                string messagePayload = "MESSAGE All\tInfo\tactivity: 46437";
+                string messagePayload = "SETACT 5 46437";
 
                 await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
             }
@@ -722,7 +721,7 @@ namespace ActivitySelect
                 await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
 
                 string user = GetOrPromptUsername();
-                string messagePayload = "MESSAGE All\tInfo\tactivity: K34";
+                string messagePayload = "SETACT 6 K34";
 
                 await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
             }
@@ -746,7 +745,7 @@ namespace ActivitySelect
                 await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
 
                 string user = GetOrPromptUsername();
-                string messagePayload = "MESSAGE All\tInfo\tactivity: K101";
+                string messagePayload = "SETACT 7 K101";
 
                 await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
             }
@@ -770,7 +769,7 @@ namespace ActivitySelect
                 await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
 
                 string user = GetOrPromptUsername();
-                string messagePayload = "MESSAGE All\tInfo\tactivity: K1556";
+                string messagePayload = "SETACT 8 K1556";
 
                 await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
             }
@@ -794,7 +793,7 @@ namespace ActivitySelect
                 await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
 
                 string user = GetOrPromptUsername();
-                string messagePayload = "MESSAGE All\tInfo\tactivity: X373";
+                string messagePayload = "SETACT 9 X373";
 
                 await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
             }
@@ -818,7 +817,7 @@ namespace ActivitySelect
                 await EnsureMpConnectedAsync("211.101.245.150", 30001).ConfigureAwait(false);
 
                 string user = GetOrPromptUsername();
-                string messagePayload = "MESSAGE All\tInfo\tactivity: X8715";
+                string messagePayload = "SETACT 10 X8715";
 
                 await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
             }
@@ -845,8 +844,8 @@ namespace ActivitySelect
                 // 获取或生成唯一用户名
                 string user = GetOrPromptUsername();
 
-                // 使用 ASCII 活动名 MEIGANG 并构造 MESSAGE
-                string messagePayload = "MESSAGE All\tInfo\tactivity: MEIGANG";
+                // 使用兼容的 SETACT <value>（不指定槽位，更新 LastActivity）
+                string messagePayload = "SETACT MEIGANG";
 
                 // 一次性写入 PLAYER + MESSAGE，并保持连接
                 await SendPlayerAndMessageInOneWriteAsync(user, messagePayload).ConfigureAwait(false);
@@ -944,6 +943,11 @@ namespace ActivitySelect
             MessageBox.Show($"已将所有非 -activity 开关替换为 -activity 并设置活动：{Path.GetFileName(matched)}。\n窗体将关闭，程序将继续启动。", "完成", MessageBoxButtons.OK, MessageBoxIcon.Information);
             DialogResult = DialogResult.OK;
             Close();
+        }
+
+        private void Form1_Load_1(object sender, EventArgs e)
+        {
+
         }
     }
 }
