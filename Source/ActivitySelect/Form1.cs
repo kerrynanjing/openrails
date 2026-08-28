@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Sockets;
@@ -7,6 +6,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System;
+using System.Collections.Generic;
 
 namespace ActivitySelect
 {
@@ -52,8 +53,10 @@ namespace ActivitySelect
             try { File.AppendAllText(_debugLogPath, $"[{DateTime.Now:O}] Form1 loaded. AppBase={AppDomain.CurrentDomain.BaseDirectory}{Environment.NewLine}"); } catch { }
 
             _ = StartActivityReceiver("211.101.245.150", 30001, _cts.Token);
-            // 在 Form1_Load 中添加：
+            // 在 Form1_Load 中添加：持久连接的初始化（发送 PLAYER）并启动轮询
             _ = SendPlayerOnlyAsync("211.101.245.150", 30001);
+            _ = StartPollingSlotsAsync("211.101.245.150", 30001, _cts.Token);
+
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -386,6 +389,160 @@ namespace ActivitySelect
             await Task.Delay(300).ConfigureAwait(false);
 
             try { File.AppendAllText(logPath, $"[{DateTime.Now:O}] SendPlayerAndMessage completed.{Environment.NewLine}"); } catch { }
+        }
+
+        // 轮询：每隔 20 秒通过持久连接发送 GETACT 并解析对该连接的响应（如果有），调用 ProcessReceivedActivity 处理
+        private async Task StartPollingSlotsAsync(string host, int port, CancellationToken token)
+        {
+            var enc = Encoding.Unicode;
+            var pollInterval = TimeSpan.FromSeconds(20);
+
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    await EnsureMpConnectedAsync(host, port).ConfigureAwait(false);
+
+                    // 发送 GETACT 帧到持久连接（服务器会对该连接回送 ACTSET）
+                    string framedGetAct = " " + "GETACT".Length + ": " + "GETACT";
+                    var getBytes = enc.GetBytes(framedGetAct);
+                    await _mpStream.WriteAsync(getBytes, 0, getBytes.Length, token).ConfigureAwait(false);
+                    await _mpStream.FlushAsync(token).ConfigureAwait(false);
+
+                    // 尝试短时间读取响应（最多 800 ms）
+                    var recv = new List<byte>();
+                    var buf = new byte[4096];
+                    try
+                    {
+                        var readTask = _mpStream.ReadAsync(buf, 0, buf.Length, token);
+                        var completed = await Task.WhenAny(readTask, Task.Delay(800, token)).ConfigureAwait(false);
+                        if (completed == readTask)
+                        {
+                            int r = await readTask.ConfigureAwait(false);
+                            if (r > 0)
+                            {
+                                for (int i = 0; i < r; i++) recv.Add(buf[i]);
+
+                                // 解析所有完整的 Unicode 帧
+                                while (TryParseUnicodeFrameClient(recv, out string payload, out int consumed))
+                                {
+                                    if (consumed > 0) recv.RemoveRange(0, consumed);
+                                    if (string.IsNullOrWhiteSpace(payload)) continue;
+
+                                    // 如果是 ACTSET 开头，取实际活动字符串
+                                    var trimmed = payload.Trim();
+                                    if (trimmed.StartsWith("ACTSET", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        var after = trimmed.Length > 6 ? trimmed.Substring(6).Trim() : string.Empty;
+                                        if (string.IsNullOrEmpty(after))
+                                        {
+                                            // 忽略空 ACTSET
+                                            try { File.AppendAllText(_debugLogPath, $"[{DateTime.Now:O}] Ignored empty ACTSET from poll{Environment.NewLine}"); } catch { }
+                                            continue;
+                                        }
+                                        ProcessReceivedActivity(after);
+                                    }
+                                    else
+                                    {
+                                        // 直接处理其它 payload（兼容）
+                                        ProcessReceivedActivity(payload);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (OperationCanceledException) when (token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+                    catch
+                    {
+                        // 忽略单次读取错误，等待下一轮
+                    }
+                }
+                catch
+                {
+                    // 忽略连接/发送错误（稍后重试）
+                }
+
+                try
+                {
+                    await Task.Delay(pollInterval, token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+            }
+        }
+
+        // 客户端用的 Unicode 帧解析（与服务器端解析兼容）
+        private static bool TryParseUnicodeFrameClient(List<byte> buffer, out string payload, out int consumed)
+        {
+            payload = null;
+            consumed = 0;
+            if (buffer.Count < 2) return false;
+
+            // 在 UTF-16LE 下寻找 ':' (0x3A 0x00)
+            int colonCharIndex = -1;
+            for (int ci = 0; ; ci++)
+            {
+                int bi = ci * 2;
+                if (bi + 1 >= buffer.Count) break;
+                if (buffer[bi] == 0x3A && buffer[bi + 1] == 0x00) { colonCharIndex = ci; break; }
+            }
+            if (colonCharIndex < 0) return false;
+
+            // 向前找 header 的数字部分（长度），允许空格
+            int headerStartChar = colonCharIndex - 1;
+            while (headerStartChar >= 0)
+            {
+                int bi = headerStartChar * 2;
+                byte lo = buffer[bi];
+                byte hi = buffer[bi + 1];
+                if (hi == 0x00 && (lo >= 0x30 && lo <= 0x39)) headerStartChar--;
+                else if (hi == 0x00 && (lo == 0x20 || lo == 0x09)) headerStartChar--;
+                else break;
+            }
+            headerStartChar++;
+
+            var sb = new StringBuilder();
+            for (int ch = headerStartChar; ch < colonCharIndex; ch++)
+            {
+                int bi = ch * 2;
+                byte lo = buffer[bi];
+                byte hi = buffer[bi + 1];
+                if (hi != 0x00) continue;
+                char c = (char)lo;
+                if (char.IsDigit(c)) sb.Append(c);
+            }
+            if (!int.TryParse(sb.ToString(), out int payloadChars)) return false;
+
+            int headerCharsCount = (colonCharIndex + 1);
+            int headerBytes = headerCharsCount * 2;
+            if (buffer.Count >= headerBytes + 2 && buffer[headerBytes] == 0x20 && buffer[headerBytes + 1] == 0x00)
+            {
+                headerBytes += 2;
+                headerCharsCount++;
+            }
+
+            int totalBytesNeeded = (headerCharsCount + payloadChars) * 2;
+            if (buffer.Count < totalBytesNeeded) return false;
+
+            int payloadByteStart = headerBytes;
+            int payloadByteLen = payloadChars * 2;
+            var payloadBytes = buffer.Skip(payloadByteStart).Take(payloadByteLen).ToArray();
+            try
+            {
+                payload = Encoding.Unicode.GetString(payloadBytes);
+            }
+            catch
+            {
+                payload = null;
+            }
+
+            consumed = totalBytesNeeded;
+            return true;
         }
 
         // button1: 建立持久连接并一次性发送 PLAYER + SETACT(slot 1)
